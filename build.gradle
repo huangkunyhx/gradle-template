@@ -7,8 +7,11 @@ apply plugin: "maven"
 apply plugin: "application"
 apply plugin: "org.springframework.boot"
 apply plugin: "com.gradle.build-scan"
+apply plugin: "com.moowork.gulp"
+apply plugin: "application"
+apply plugin: "war"
 
-description = "Gradle Template Application"
+description = "SSO Application"
 
 defaultTasks "clean", "build"
 
@@ -29,25 +32,41 @@ repositories {
 sourceSets {
   main {
     resources {
-      srcDirs "${project.buildDir}/generated-src/main/resources", "${project.projectDir}/src/main/resources"
+      srcDirs "${project.projectDir}/src/main/resources", "${project.projectDir}/src/main/webapp"
     }
   }
 }
 
 dependencies {
-  implementation libraries.commons
-  implementation libraries.guava
-  implementation libraries.httpclient
-  implementation libraries.jackson
+  implementation libraries.aspectj
+  implementation libraries.validationapi
 
-  compile("ch.qos.logback:logback-classic:$logbackVersion")
-  compile("ch.qos.logback:logback-core:$logbackVersion")
-  compile("org.springframework.boot:spring-boot-starter") {
-    exclude group: 'ch.qos.logback', module: 'logback-classic'
-    exclude group: 'ch.qos.logback', module: 'logback-core'
-  }
+  api libraries.log4j
+  api libraries.guava
+  api libraries.commons
+  api libraries.jodatime
+  api libraries.inspektr
+  api libraries.spring
+  api libraries.jackson
+  api libraries.hibernate
+//  api libraries.springcloud
+  api libraries.springboot
+  api libraries.javax
 
-  testCompile libraries.tests
+  implementation libraries.pac4j
+  implementation libraries.thymeleaf
+  implementation libraries.groovy
+  implementation libraries.cassecurityfilter
+  implementation libraries.metrics
+  implementation libraries.bouncycastle
+//  compile libraries.springcloudconfigclient
+  compile libraries.springboottomcat
+
+  compile "redis.clients:jedis:2.9.0"
+  compile libraries.cas
+
+  testImplementation libraries.tests
+  runtimeOnly libraries.javaximpl
 }
 
 apply from: rootProject.file("gradle/tasks.gradle")
@@ -55,6 +74,13 @@ apply from: rootProject.file("gradle/maven.gradle")
 
 apply from: rootProject.file("gradle/checkstyle.gradle")
 apply from: rootProject.file("gradle/findbugs.gradle")
+
+configurations.all {
+  exclude(group: "ch.qos.logback", module: "logback-core")
+  exclude(group: "ch.qos.logback", module: "logback-classic")
+  exclude(group: "cglib", module: "cglib")
+  exclude(group: "cglib", module: "cglib-full")
+}
 
 jar {
   manifest {
@@ -66,7 +92,40 @@ jar {
   }
 }
 
-mainClassName = "com.unionpaysmart.template.application.Application"
+war {
+  manifest {
+    attributes("Implementation-Title": project.name,
+            "Implementation-Vendor": project.group,
+            "Created-By": project.group,
+            "Implementation-Date": buildDate,
+            "Specification-Version": rootProject.version,
+            "Implementation-Version": project.version)
+  }
+  from "${project.buildDir}/resources/main", { into "WEB-INF/classes" }
+}
+
+mainClassName = 'org.apereo.cas.web.CasWebApplication'
+
+task gulpSetup(dependsOn: ["npmInstall", "installGulp"], description: "Install npm and Gulp") {}
+task gulpRun(dependsOn: gulp_default, description: "Runs Gulp default task") {}
+processResources.dependsOn gulpRun
+
+node {
+  nodeModulesDir = project.file("src/main/webapp")
+}
+
+gulp {
+  workDir = project.file("src/main/webapp")
+  colors = true
+  bufferOutput = true
+}
+
+bootRun {
+  if (Boolean.getBoolean("enableRemoteDebugging")) {
+    jvmArgs = ["-Xrunjdwp:transport=dt_socket,address=5000,server=y,suspend=n"]
+  }
+  systemProperties = System.properties
+}
 
 buildScan {
   licenseAgreementUrl = "https://gradle.com/terms-of-service"
@@ -90,18 +149,25 @@ buildscript {
   repositories {
     mavenLocal()
     maven { url "http://192.168.88.8:8081/nexus/content/groups/public" }
+    mavenCentral()
+    jcenter()
     maven { url "https://maven.eveoh.nl/content/repositories/releases" }
     maven { url "https://plugins.gradle.org/m2/" }
     maven { url "https://repo.spring.io/plugins-release" }
     maven { url "https://repo.spring.io/milestone" }
     maven { url "https://repo.spring.io/snapshot" }
-    mavenCentral()
   }
 
   dependencies {
     classpath "org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion"
+    classpath "com.netflix.nebula:gradle-lint-plugin:7.3.5"
+    classpath "org.standardout:gradle-versioneye-plugin:1.4.0"
     classpath "org.springframework.build.gradle:propdeps-plugin:0.0.7"
-    classpath "io.spring.gradle:dependency-management-plugin:1.0.2.RELEASE"
     classpath "com.gradle:build-scan-plugin:1.0"
+    classpath "org.ajoberstar:grgit:1.7.2"
+    classpath "io.spring.gradle:dependency-management-plugin:1.0.2.RELEASE"
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+    classpath "com.moowork.gradle:gradle-node-plugin:1.1.1"
   }
+
 }
