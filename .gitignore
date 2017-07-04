@@ -1,6 +1,11 @@
 # Compiled class file
 *.class
 target/*
+node_modules
+.classpath
+.gradletasknamecache
+.project
+.settings/
 
 # Log file
 *.log
@@ -22,10 +27,15 @@ logs/*
 
 # idea
 .idea/
+out/
 sso.iml
 
 # gradle
 .gradle/
+gradle-template.iml
+
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+/target/
+/bin/
