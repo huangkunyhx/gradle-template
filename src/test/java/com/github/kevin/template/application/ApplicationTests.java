@@ -1,4 +1,4 @@
-package com.unionpaysmart.template.application;
+package com.github.kevin.template.application;
 
 import org.junit.Assert;
 import org.junit.Test;
