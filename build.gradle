@@ -9,7 +9,7 @@ apply from: 'gradle/tasks.gradle'
 group = 'com.github.kevin'
 version = '0.0.1'
 
-description = "Gradle Template Application"
+description = "SSO Application"
 
 defaultTasks "clean", "build"
 
@@ -32,23 +32,15 @@ dependencies {
   compile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
 }
 
+configurations {
+  compile.exclude group: "log4j", module: "log4j"
+}
+
 mainClassName = "com.github.kevin.template.application.Application"
 
 startScripts {
   doLast {
     unixScript.text = unixScript.text.replaceAll(":\\\$APP_HOME/lib/(.*)\n", ":\\\$APP_HOME/lib/\\*\n")
-  }
-}
-
-jar {
-  manifest {
-    attributes("Implementation-Title": project.description,
-            "Automatic-Module-Name": project.group,
-            "Built-By": "Kevin Huang",
-            "Created-By": "$gradleVersion",
-            "Build-Jdk": "$JdkVersion",
-//            "Specification-Version": project.version, // 可以git版本号
-            "Implementation-Version": project.version)
   }
 }
 
@@ -69,7 +61,14 @@ compileJava {
     //  options.compilerArgs = ["-parameters"]
 
     jar.manifest {
-      attributes("Implementation-Date": java.time.ZonedDateTime.now())
+      attributes("Implementation-Title": project.description,
+              "Automatic-Module-Name": project.group,
+              "Built-By": "Kevin Huang",
+              "Created-By": "$gradleVersion",
+              "Build-Jdk": "$JdkVersion",
+//            "Specification-Version": project.version, // 可以git版本号
+              "Implementation-Version": project.version,
+              "Implementation-Date": java.time.ZonedDateTime.now())
     }
   }
 }
