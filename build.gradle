@@ -1,107 +1,88 @@
-apply from: rootProject.file("gradle/overrides.gradle")
-apply from: rootProject.file("gradle/dependencies.gradle")
+apply plugin: 'java'
+apply plugin: 'application'
+apply from: 'gradle/style.gradle'
+apply from: 'gradle/maven.gradle'
+apply from: 'gradle/tasks.gradle'
+//apply plugin: 'org.springframework.boot'
+//apply plugin: 'io.spring.dependency-management'
 
-apply plugin: "java-library"
-apply plugin: "idea"
-apply plugin: "maven"
-apply plugin: "application"
-apply plugin: "org.springframework.boot"
-apply plugin: "com.gradle.build-scan"
+group = 'com.github.kevin'
+version = '0.0.1'
 
 description = "Gradle Template Application"
 
 defaultTasks "clean", "build"
 
-compileJava.options.fork = true
-[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+buildDir = "target"
 
 ext {
-  buildDate = java.time.ZonedDateTime.now()
-  logbackVersion = '1.1.6'
+  mavenPublicUrl="http://nexus.5dg.co/repository/maven-public"
 }
 
 repositories {
   mavenLocal()
-  maven { url "http://192.168.88.8:8081/nexus/content/repositories/public" }
+  maven { url mavenPublicUrl }
   mavenCentral()
 }
 
-sourceSets {
-  main {
-    resources {
-      srcDirs "${project.buildDir}/generated-src/main/resources", "${project.projectDir}/src/main/resources"
-    }
-  }
-}
-
 dependencies {
-  implementation libraries.commons
-  implementation libraries.guava
-  implementation libraries.httpclient
-  implementation libraries.jackson
-
-  compile("ch.qos.logback:logback-classic:$logbackVersion")
-  compile("ch.qos.logback:logback-core:$logbackVersion")
-  compile("org.springframework.boot:spring-boot-starter") {
-    exclude group: 'ch.qos.logback', module: 'logback-classic'
-    exclude group: 'ch.qos.logback', module: 'logback-core'
-  }
-
-  testCompile libraries.tests
+  compile "org.springframework.boot:spring-boot-starter:$springBootVersion"
+  compile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
 }
 
-apply from: rootProject.file("gradle/tasks.gradle")
-apply from: rootProject.file("gradle/maven.gradle")
+mainClassName = "com.github.kevin.template.application.Application"
 
-apply from: rootProject.file("gradle/checkstyle.gradle")
-apply from: rootProject.file("gradle/findbugs.gradle")
+startScripts {
+  doLast {
+    unixScript.text = unixScript.text.replaceAll(":\\\$APP_HOME/lib/(.*)\n", ":\\\$APP_HOME/lib/\\*\n")
+  }
+}
 
 jar {
   manifest {
-    attributes("Implementation-Title": project.name,
-            "Implementation-Vendor": project.group,
-            "Created-By": project.group,
-            "Specification-Version": project.version, // 可以git版本号
+    attributes("Implementation-Title": project.description,
+            "Automatic-Module-Name": project.group,
+            "Built-By": "Kevin Huang",
+            "Created-By": "$gradleVersion",
+            "Build-Jdk": "$JdkVersion",
+//            "Specification-Version": project.version, // 可以git版本号
             "Implementation-Version": project.version)
   }
 }
 
-mainClassName = "com.unionpaysmart.template.application.Application"
-
-buildScan {
-  licenseAgreementUrl = "https://gradle.com/terms-of-service"
-  licenseAgree = "yes"
-  licenseAgree = "yes"
-}
-
-compileJava.doLast {
-  jar.manifest {
-    attributes("Implementation-Date": buildDate)
+sourceSets {
+  main {
+    java {
+      srcDirs "${project.buildDir}/generated-src/main/java", "${project.projectDir}/src/main/java"
+    }
   }
 }
 
-startScripts {
+[compileJava, compileTestJava]*.options*.encoding = "UTF-8"
+compileJava {
+  options.fork = true
+
   doLast {
-    unixScript.text = unixScript.text.replaceAll("lib/(.*)\n", "lib/\\*")
+    //  编译时添加参数名
+    //  options.compilerArgs = ["-parameters"]
+
+    jar.manifest {
+      attributes("Implementation-Date": java.time.ZonedDateTime.now())
+    }
   }
 }
 
 buildscript {
   repositories {
     mavenLocal()
-    maven { url "http://192.168.88.8:8081/nexus/content/groups/public" }
-    maven { url "https://maven.eveoh.nl/content/repositories/releases" }
-    maven { url "https://plugins.gradle.org/m2/" }
-    maven { url "https://repo.spring.io/plugins-release" }
-    maven { url "https://repo.spring.io/milestone" }
-    maven { url "https://repo.spring.io/snapshot" }
+    maven { url mavenPublicUrl }
     mavenCentral()
   }
 
   dependencies {
-    classpath "org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion"
-    classpath "org.springframework.build.gradle:propdeps-plugin:0.0.7"
-    classpath "io.spring.gradle:dependency-management-plugin:1.0.2.RELEASE"
-    classpath "com.gradle:build-scan-plugin:1.0"
+    classpath("org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion")
+    classpath("io.spring.gradle:dependency-management-plugin:$springDependencyManagementVersion")
   }
 }

@@ -1,4 +1,4 @@
-package com.unionpaysmart.template.application;
+package com.github.kevin.template.application;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

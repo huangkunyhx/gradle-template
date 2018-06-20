@@ -3,5 +3,5 @@
 ##### SUPPORT
 * code style check
 * find bugs
+* pmd
 * maven
-* overwrite spring boot dependencies conflict
